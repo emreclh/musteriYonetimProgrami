@@ -5,6 +5,7 @@ public class Musteri implements Serializable{
     private String id;
     private String ad;
     private String soyad;
+    private boolean cins;
     private String dg;
     private String tc;
     private String email;
@@ -13,7 +14,7 @@ public class Musteri implements Serializable{
 
     public Musteri() {}
 
-    public Musteri(String ad, String soyad, String email, String dg, String tc, String kt, String gt) {
+    public Musteri(String ad, String soyad, String email, String dg, String tc,boolean cins, String kt, String gt) {
         this.ad = ad;
         this.soyad = soyad;
         this.email = email;
@@ -21,6 +22,7 @@ public class Musteri implements Serializable{
         this.tc = tc;
         this.kt = kt;
         this.gt = gt;
+        this.cins = cins;
     }
     public String getId() {
         return id;
@@ -45,6 +47,20 @@ public class Musteri implements Serializable{
     }
     public void setMail(String mail) {
         this.email = mail;
+    }
+    public String getCinsiyetText() {
+        return cins ? "Kadın" : "Erkek";
+    }
+    public boolean getCins() {
+        return cins;
+    }
+
+    public void setCins(boolean cins) {
+        this.cins = cins;
+    }
+
+    public void setCinsiyetFromText(String cinsiyetText) {
+        this.cins = "Kadın".equals(cinsiyetText);
     }
     public String getTc() {
         return tc;
@@ -81,6 +97,7 @@ public class Musteri implements Serializable{
                 ", soyad='" + soyad + '\'' +
                 ", email='" + email + '\'' +
                 ", tc='" + tc + '\'' +
+                ", cinsiyet='" + cins + '\'' +
                 ", dg='" + dg + '\'' +
                 ", kt='" + kt + '\'' +
                 ", gt='" + gt + '\'' +

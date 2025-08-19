@@ -16,20 +16,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
+            app:cardBackgroundColor="#2196F3"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="#2196F3">
+            app:cardElevation="4dp">
 
             <TextView
                 android:id="@+id/tvBaslik"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:padding="16dp"
                 android:text="YENİ MÜŞTERİ EKLE"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="@android:color/white"
                 android:textAlignment="center"
-                android:padding="16dp" />
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
         </com.google.android.material.card.MaterialCardView>
 
@@ -37,9 +37,9 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:cardBackgroundColor="@android:color/white"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="@android:color/white">
+            app:cardElevation="4dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -124,7 +124,7 @@
                     app:boxCornerRadiusBottomStart="8dp"
                     app:boxCornerRadiusTopEnd="8dp"
                     app:boxCornerRadiusTopStart="8dp"
-                    app:startIconDrawable="@android:drawable/ic_menu_agenda">
+                    app:startIconDrawable="@android:drawable/ic_dialog_info">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etTC"
@@ -135,6 +135,43 @@
                         android:maxLines="1" />
 
                 </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Cinsiyet -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cinsiyet *"
+                    android:textSize="16sp"
+                    android:textColor="#666"
+                    android:layout_marginBottom="8dp"
+                    android:layout_marginStart="4dp" />
+
+                <RadioGroup
+                    android:id="@+id/rgCinsiyet"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp"
+                    android:layout_marginStart="8dp">
+
+                    <RadioButton
+                        android:id="@+id/rbErkek"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Erkek"
+                        android:textSize="16sp"
+                        android:checked="true" />
+
+                    <RadioButton
+                        android:id="@+id/rbKadin"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Kadın"
+                        android:textSize="16sp" />
+
+                </RadioGroup>
 
                 <!-- Doğum Tarihi -->
                 <com.google.android.material.textfield.TextInputLayout
@@ -153,10 +190,10 @@
                         android:id="@+id/etDogumTarihi"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="date"
-                        android:maxLines="1"
+                        android:clickable="true"
                         android:focusable="false"
-                        android:clickable="true" />
+                        android:inputType="date"
+                        android:maxLines="1" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -179,9 +216,9 @@
                         android:id="@+id/etKayitTarihi"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:enabled="false"
                         android:inputType="none"
-                        android:maxLines="1"
-                        android:enabled="false" />
+                        android:maxLines="1" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -189,27 +226,27 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="* ile işaretli alanlar zorunludur"
-                    android:textSize="12sp"
-                    android:textColor="#666"
-                    android:textStyle="italic"
                     android:layout_marginTop="8dp"
-                    android:layout_marginBottom="24dp" />
+                    android:layout_marginBottom="24dp"
+                    android:text="* ile işaretli alanlar zorunludur"
+                    android:textColor="#666"
+                    android:textSize="12sp"
+                    android:textStyle="italic" />
 
                 <!-- Butonlar -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="horizontal">
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnIptal"
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="0dp"
                         android:layout_height="56dp"
-                        android:layout_weight="1"
                         android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
                         android:text="İPTAL"
                         android:textSize="16sp"
                         android:textStyle="bold"
@@ -221,8 +258,8 @@
                         android:id="@+id/btnKaydet"
                         android:layout_width="0dp"
                         android:layout_height="56dp"
-                        android:layout_weight="1"
                         android:layout_marginStart="8dp"
+                        android:layout_weight="1"
                         android:text="KAYDET"
                         android:textSize="16sp"
                         android:textStyle="bold"

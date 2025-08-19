@@ -11,32 +11,29 @@ import java.util.concurrent.TimeUnit;
 
 public class ApiClient {
 
-    private static final String BASE_URL = "http://10.0.2.2:8080/"; // Your base URL
+    private static final String BASE_URL = "http://10.0.2.2:8080/";
     private static MusteriApiInterface apiService;
 
     public static MusteriApiInterface getApiService() {
         if (apiService == null) {
-            // Create a Gson instance that is lenien
             Gson gson = new GsonBuilder()
-                    .setLenient() // This line makes Gson lenient
+                    .setLenient()
                     .create();
 
-            // Create an OkHttpClient for logging and timeouts (optional but good practice)
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-            logging.setLevel(HttpLoggingInterceptor.Level.BODY); // Log request and response bodies
+            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
             OkHttpClient client = new OkHttpClient.Builder()
-                    .addInterceptor(logging) // Add the logging interceptor
-                    .connectTimeout(30, TimeUnit.SECONDS) // Connection timeout
-                    .readTimeout(30, TimeUnit.SECONDS)    // Read timeout
-                    .writeTimeout(30, TimeUnit.SECONDS)   // Write timeout
+                    .addInterceptor(logging)
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .writeTimeout(30, TimeUnit.SECONDS)
                     .build();
 
-            // Build Retrofit instance
             Retrofit retrofit = new Retrofit.Builder()
                     .baseUrl(BASE_URL)
-                    .addConverterFactory(GsonConverterFactory.create(gson)) // Use the lenient Gson
-                    .client(client) // Use the configured OkHttpClient
+                    .addConverterFactory(GsonConverterFactory.create(gson))
+                    .client(client)
                     .build();
 
             apiService = retrofit.create(MusteriApiInterface.class);

@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Patterns;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,6 +29,8 @@ public class MusteriFormActivity extends AppCompatActivity {
 
     private TextInputEditText etAd, etSoyad, etMail, etTC, etDogumTarihi, etKayitTarihi;
     private EditText etId;
+    private RadioGroup rgCinsiyet;
+    private RadioButton rbErkek, rbKadin;
     private MaterialButton btnKaydet, btnIptal;
     private TextView tvBaslik;
     private TextInputLayout layoutKayitTarihi;
@@ -52,6 +56,9 @@ public class MusteriFormActivity extends AppCompatActivity {
         etDogumTarihi = findViewById(R.id.etDogumTarihi);
         etKayitTarihi = findViewById(R.id.etKayitTarihi);
         etId = findViewById(R.id.etId);
+        rgCinsiyet = findViewById(R.id.rgCinsiyet);
+        rbErkek = findViewById(R.id.rbErkek);
+        rbKadin = findViewById(R.id.rbKadin);
         btnKaydet = findViewById(R.id.btnKaydet);
         btnIptal = findViewById(R.id.btnIptal);
         tvBaslik = findViewById(R.id.tvBaslik);
@@ -90,6 +97,13 @@ public class MusteriFormActivity extends AppCompatActivity {
         etDogumTarihi.setText(musteri.getDg());
         etKayitTarihi.setText(musteri.getKt());
         musteriId = musteri.getId();
+
+        // Cinsiyet ayarla
+        if (musteri.getCins()) {
+            rbKadin.setChecked(true);
+        } else {
+            rbErkek.setChecked(true);
+        }
     }
 
     private void showDatePicker() {
@@ -108,6 +122,11 @@ public class MusteriFormActivity extends AppCompatActivity {
         datePickerDialog.show();
     }
 
+    private boolean getCinsiyetValue() {
+        // rbKadin seçiliyse true (Kadın), rbErkek seçiliyse false (Erkek)
+        return rbKadin.isChecked();
+    }
+
     private void kaydet() {
         if (!validateForm()) {
             return;
@@ -119,6 +138,7 @@ public class MusteriFormActivity extends AppCompatActivity {
                 etMail.getText().toString().trim(),
                 etDogumTarihi.getText().toString().trim(),
                 etTC.getText().toString().trim(),
+                getCinsiyetValue(), // cinsiyet değeri
                 "", // kt - kayıt tarihi backend'de otomatik ayarlanacak
                 ""  // gt - güncelleme tarihi backend'de otomatik ayarlanacak
         );
@@ -151,6 +171,13 @@ public class MusteriFormActivity extends AppCompatActivity {
             etTC.setError("TC Kimlik 11 haneli olmalıdır");
             return false;
         }
+
+        // Cinsiyet kontrolü - RadioGroup'ta mutlaka bir seçim olmalı
+        if (rgCinsiyet.getCheckedRadioButtonId() == -1) {
+            Toast.makeText(this, "Cinsiyet seçimi zorunludur", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
         return true;
     }
 
@@ -173,7 +200,7 @@ public class MusteriFormActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<Musteri> call, Throwable t) {
                 Toast.makeText(MusteriFormActivity.this,
-                        "Network hatası: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        "Network hatası: " + t.getMessage() + ". Bağlantınızı kontrol edin.", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -197,7 +224,7 @@ public class MusteriFormActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<Musteri> call, Throwable t) {
                 Toast.makeText(MusteriFormActivity.this,
-                        "Network hatası: " + t.getMessage() + ". Bağlantınızı kontrol edin.", Toast.LENGTH_SHORT).show();
+                        "Network hatası: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

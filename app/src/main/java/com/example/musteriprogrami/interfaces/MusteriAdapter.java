@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -60,7 +61,8 @@ public class MusteriAdapter extends RecyclerView.Adapter<MusteriAdapter.MusteriV
     }
 
     class MusteriViewHolder extends RecyclerView.ViewHolder {
-        TextView tvAdSoyad, tvEmail, tvTC, tvDogumTarihi, tvKayitTarihi, tvGuncellemeTarihi;
+        TextView tvAdSoyad, tvEmail, tvTC, tvCinsiyet, tvDogumTarihi, tvKayitTarihi, tvGuncellemeTarihi;
+        ImageView ivCinsiyetIcon;
         MaterialButton btnDuzenle, btnSil;
 
         MusteriViewHolder(@NonNull View itemView) {
@@ -68,9 +70,11 @@ public class MusteriAdapter extends RecyclerView.Adapter<MusteriAdapter.MusteriV
             tvAdSoyad = itemView.findViewById(R.id.tvAdSoyad);
             tvEmail = itemView.findViewById(R.id.tvEmail);
             tvTC = itemView.findViewById(R.id.tvTC);
+            tvCinsiyet = itemView.findViewById(R.id.tvCinsiyet);
             tvDogumTarihi = itemView.findViewById(R.id.tvDogumTarihi);
             tvKayitTarihi = itemView.findViewById(R.id.tvKayitTarihi);
             tvGuncellemeTarihi = itemView.findViewById(R.id.tvGuncellemeTarihi);
+            ivCinsiyetIcon = itemView.findViewById(R.id.ivCinsiyetIcon);
             btnDuzenle = itemView.findViewById(R.id.btnDuzenle);
             btnSil = itemView.findViewById(R.id.btnSil);
         }
@@ -83,6 +87,17 @@ public class MusteriAdapter extends RecyclerView.Adapter<MusteriAdapter.MusteriV
             tvKayitTarihi.setText("Kayıt: " + musteri.getKt());
             tvGuncellemeTarihi.setText("Güncelleme: " + musteri.getGt());
 
+            // Cinsiyet bilgisini göster
+            if (musteri.getCins()) {
+                tvCinsiyet.setText("Kadın");
+                // Kadın için farklı bir ikon kullanabilirsiniz
+                ivCinsiyetIcon.setImageResource(android.R.drawable.ic_menu_myplaces);
+            } else {
+                tvCinsiyet.setText("Erkek");
+                // Erkek için farklı bir ikon kullanabilirsiniz
+                ivCinsiyetIcon.setImageResource(android.R.drawable.ic_menu_myplaces);
+            }
+
             btnDuzenle.setOnClickListener(v -> {
                 Intent intent = new Intent(context, MusteriFormActivity.class);
                 intent.putExtra("musteri", musteri);
@@ -94,41 +109,41 @@ public class MusteriAdapter extends RecyclerView.Adapter<MusteriAdapter.MusteriV
 
     }
 
-        private void showDeleteConfirmDialog(Musteri musteri, int position) {
-            new AlertDialog.Builder(context)
-                    .setTitle("Müşteri Sil")
-                    .setMessage(musteri.getAd() + " " + musteri.getSoyad() +
-                            " adlı müşteriyi silmek istediğinizden emin misiniz?")
-                    .setPositiveButton("Sil", (dialog, which) -> deleteMusteri(musteri.getId(), position))
-                    .setNegativeButton("İptal", null)
-                    .show();
-        }
+    private void showDeleteConfirmDialog(Musteri musteri, int position) {
+        new AlertDialog.Builder(context)
+                .setTitle("Müşteri Sil")
+                .setMessage(musteri.getAd() + " " + musteri.getSoyad() +
+                        " adlı müşteriyi silmek istediğinizden emin misiniz?")
+                .setPositiveButton("Sil", (dialog, which) -> deleteMusteri(musteri.getId(), position))
+                .setNegativeButton("İptal", null)
+                .show();
+    }
 
-        private void deleteMusteri(String musteriId, int position) { // musteriId ve position al
-            Call<Void> call = ApiClient.getApiService().musteriSil(musteriId);
-            call.enqueue(new Callback<Void>() {
-                @Override
-                public void onResponse(Call<Void> call, Response<Void> response) {
-                    if (response.isSuccessful()) {
-                        Toast.makeText(context, "Müşteri silindi!", Toast.LENGTH_SHORT).show();
-                        // Pozisyonu kullanarak doğrudan kaldır
-                        musteriler.remove(position);
-                        notifyItemRemoved(position);
-                        // Eğer hala bir dış dinleyiciye ihtiyaç varsa çağır
-                        if (deleteListener != null) {
-                            deleteListener.onMusteriDeleted();
-                        }
-                    } else {
-                        Toast.makeText(context, "Silme hatası: " + response.code(),
-                                Toast.LENGTH_SHORT).show();
+    private void deleteMusteri(String musteriId, int position) {
+        Call<Void> call = ApiClient.getApiService().musteriSil(musteriId);
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(context, "Müşteri silindi!", Toast.LENGTH_SHORT).show();
+                    // Pozisyonu kullanarak doğrudan kaldır
+                    musteriler.remove(position);
+                    notifyItemRemoved(position);
+                    // Eğer hala bir dış dinleyiciye ihtiyaç varsa çağır
+                    if (deleteListener != null) {
+                        deleteListener.onMusteriDeleted();
                     }
-                }
-
-                @Override
-                public void onFailure(Call<Void> call, Throwable t) {
-                    Toast.makeText(context, "Network hatası: " + t.getMessage(),
+                } else {
+                    Toast.makeText(context, "Silme hatası: " + response.code(),
                             Toast.LENGTH_SHORT).show();
                 }
-            });
-        }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(context, "Network hatası: " + t.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+}
