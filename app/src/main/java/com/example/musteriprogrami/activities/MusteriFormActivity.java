@@ -3,6 +3,7 @@ package com.example.musteriprogrami.activities;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.Patterns;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -16,14 +17,13 @@ import com.example.musteriprogrami.entities.Musteri;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Pattern;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import retrofit2.*;
 
 public class MusteriFormActivity extends AppCompatActivity {
 
@@ -69,7 +69,6 @@ public class MusteriFormActivity extends AppCompatActivity {
         btnIptal.setOnClickListener(v -> finish());
         btnKaydet.setOnClickListener(v -> kaydet());
 
-        // Tarih picker
         etDogumTarihi.setOnClickListener(v -> showDatePicker());
     }
 
@@ -94,9 +93,20 @@ public class MusteriFormActivity extends AppCompatActivity {
         etSoyad.setText(musteri.getSoyad());
         etMail.setText(musteri.getEmail());
         etTC.setText(musteri.getTc());
-        etDogumTarihi.setText(musteri.getDg());
         etKayitTarihi.setText(musteri.getKt());
         musteriId = musteri.getId();
+
+        // API'den gelen YYYY-MM-DD formatındaki tarihi GG/AA/YYYY formatına dönüştürüp göster
+        try {
+            SimpleDateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            Date date = apiFormat.parse(musteri.getDg());
+            etDogumTarihi.setText(displayFormat.format(date));
+        } catch (ParseException e) {
+            Log.e("MusteriFormActivity", "Doğum tarihi format dönüştürme hatası: " + e.getMessage());
+            etDogumTarihi.setText(musteri.getDg()); // Hata durumunda orijinal formatı göster
+        }
+
 
         // Cinsiyet ayarla
         if (musteri.getCins()) {
@@ -111,9 +121,12 @@ public class MusteriFormActivity extends AppCompatActivity {
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 this,
                 (view, year, month, dayOfMonth) -> {
-                    String selectedDate = String.format(Locale.getDefault(),
-                            "%02d/%02d/%d", dayOfMonth, month + 1, year);
-                    etDogumTarihi.setText(selectedDate);
+                    Calendar selectedCalendar = Calendar.getInstance();
+                    selectedCalendar.set(year, month, dayOfMonth);
+
+                    SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                    String formattedDate = displayDateFormat.format(selectedCalendar.getTime());
+                    etDogumTarihi.setText(formattedDate);
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -122,21 +135,35 @@ public class MusteriFormActivity extends AppCompatActivity {
         datePickerDialog.show();
     }
 
+    // Cinsiyet değerini al. true ise kadın, false ise erkek
     private boolean getCinsiyetValue() {
-        // rbKadin seçiliyse true (Kadın), rbErkek seçiliyse false (Erkek)
         return rbKadin.isChecked();
     }
 
+    // Kaydet butonuna tıklandığında çalışacak metod.
     private void kaydet() {
         if (!validateForm()) {
             return;
         }
 
+        String dgText = etDogumTarihi.getText().toString().trim();
+        String formattedDgForApi = "";
+        try {
+            SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            SimpleDateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date date = displayFormat.parse(dgText);
+            formattedDgForApi = apiFormat.format(date);
+        } catch (ParseException e) {
+            Log.e("MusteriFormActivity", "Doğum tarihi API format dönüştürme hatası: " + e.getMessage());
+            formattedDgForApi = dgText;
+        }
+
+
         Musteri musteri = new Musteri(
                 etAd.getText().toString().trim(),
                 etSoyad.getText().toString().trim(),
                 etMail.getText().toString().trim(),
-                etDogumTarihi.getText().toString().trim(),
+                formattedDgForApi, // Artık bu alan yyyy-MM-dd formatında olacak
                 etTC.getText().toString().trim(),
                 getCinsiyetValue(), // cinsiyet değeri
                 "", // kt - kayıt tarihi backend'de otomatik ayarlanacak
@@ -151,24 +178,40 @@ public class MusteriFormActivity extends AppCompatActivity {
     }
 
     private boolean validateForm() {
+        // Ad zorunlu kontrolü
         if (etAd.getText().toString().trim().isEmpty()) {
             etAd.setError("Ad zorunludur");
             return false;
         }
+        // Soyad zorunlu kontrolü
         if (etSoyad.getText().toString().trim().isEmpty()) {
             etSoyad.setError("Soyad zorunludur");
             return false;
         }
+        // E-mail zorunlu kontrolü
         if (etMail.getText().toString().trim().isEmpty()) {
             etMail.setError("E-mail zorunludur");
             return false;
         }
+        // E-mail formatı kontrolü
         if (!Patterns.EMAIL_ADDRESS.matcher(etMail.getText().toString().trim()).matches()) {
             etMail.setError("Geçerli bir e-mail adresi girin");
             return false;
         }
-        if (etTC.getText().toString().trim().isEmpty() || etTC.getText().toString().length() != 11) {
-            etTC.setError("TC Kimlik 11 haneli olmalıdır");
+        // TC Kimlik No zorunlu
+        String tcText = etTC.getText().toString().trim();
+        if (tcText.isEmpty()) {
+            etTC.setError("TC Kimlik No zorunludur");
+            return false;
+        }
+        // TC Kimlik No 11 haneli kontrolü
+        if (tcText.length() != 11) {
+            etTC.setError("TC Kimlik No 11 haneli olmalıdır");
+            return false;
+        }
+        // Sadece rakamlardan oluştuğunu kontrol et
+        if (!Pattern.matches("^[0-9]{11}$", tcText)) {
+            etTC.setError("TC Kimlik No sadece rakamlardan oluşmalıdır");
             return false;
         }
 
@@ -178,9 +221,16 @@ public class MusteriFormActivity extends AppCompatActivity {
             return false;
         }
 
+        // Doğum tarihi zorunlu kontrolü
+        String dgText = etDogumTarihi.getText().toString().trim();
+        if (dgText.isEmpty()) {
+            etDogumTarihi.setError("Doğum tarihi zorunludur");
+            return false;
+        }
         return true;
     }
 
+    // Yeni müşteri ekleme işlemi
     private void yeniMusteriEkle(Musteri musteri) {
         Call<Musteri> call = ApiClient.getApiService().musteriEkle(musteri);
         call.enqueue(new Callback<Musteri>() {
@@ -193,7 +243,16 @@ public class MusteriFormActivity extends AppCompatActivity {
                     finish();
                 } else {
                     Toast.makeText(MusteriFormActivity.this,
-                            "Hata: " + response.code(), Toast.LENGTH_SHORT).show();
+                            "Ekleme hatası: " + response.code(), Toast.LENGTH_SHORT).show();
+                    Log.e("MusteriFormActivity", "API Error: " + response.message());
+                    try {
+                        String errorBody = response.errorBody() != null ? response.errorBody().string() : "Bilinmeyen hata";
+                        Log.e("MusteriFormActivity", "Error Body: " + errorBody);
+                        Toast.makeText(MusteriFormActivity.this,
+                                "Hata: " + errorBody, Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        Log.e("MusteriFormActivity", "Error reading error body: " + e.getMessage());
+                    }
                 }
             }
 
@@ -201,10 +260,12 @@ public class MusteriFormActivity extends AppCompatActivity {
             public void onFailure(Call<Musteri> call, Throwable t) {
                 Toast.makeText(MusteriFormActivity.this,
                         "Network hatası: " + t.getMessage() + ". Bağlantınızı kontrol edin.", Toast.LENGTH_SHORT).show();
+                Log.e("MusteriFormActivity", "Network Error: " + t.getMessage());
             }
         });
     }
 
+    // Müşteri güncelleme işlemi
     private void musteriGuncelle(Musteri musteri) {
         Call<Musteri> call = ApiClient.getApiService().musteriGuncelle(musteriId, musteri);
         call.enqueue(new Callback<Musteri>() {
@@ -217,7 +278,16 @@ public class MusteriFormActivity extends AppCompatActivity {
                     finish();
                 } else {
                     Toast.makeText(MusteriFormActivity.this,
-                            "Hata: " + response.code(), Toast.LENGTH_SHORT).show();
+                            "Güncelleme hatası: " + response.code(), Toast.LENGTH_SHORT).show();
+                    Log.e("MusteriFormActivity", "API Error: " + response.message());
+                    try {
+                        String errorBody = response.errorBody() != null ? response.errorBody().string() : "Bilinmeyen hata";
+                        Log.e("MusteriFormActivity", "Error Body: " + errorBody);
+                        Toast.makeText(MusteriFormActivity.this,
+                                "Hata: " + errorBody, Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        Log.e("MusteriFormActivity", "Error reading error body: " + e.getMessage());
+                    }
                 }
             }
 
@@ -225,6 +295,7 @@ public class MusteriFormActivity extends AppCompatActivity {
             public void onFailure(Call<Musteri> call, Throwable t) {
                 Toast.makeText(MusteriFormActivity.this,
                         "Network hatası: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("MusteriFormActivity", "Network Error: " + t.getMessage());
             }
         });
     }

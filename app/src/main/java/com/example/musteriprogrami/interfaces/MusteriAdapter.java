@@ -3,12 +3,14 @@ package com.example.musteriprogrami.interfaces;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -17,7 +19,11 @@ import com.example.musteriprogrami.activities.MusteriFormActivity;
 import com.example.musteriprogrami.controllers.ApiClient;
 import com.example.musteriprogrami.entities.Musteri;
 import com.google.android.material.button.MaterialButton;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -27,14 +33,16 @@ public class MusteriAdapter extends RecyclerView.Adapter<MusteriAdapter.MusteriV
     private List<Musteri> musteriler;
     private Context context;
     private OnMusteriDeletedListener deleteListener;
+    private ActivityResultLauncher<Intent> formActivityLauncher;
+
+    public MusteriAdapter(List<Musteri> musteriler, Context context, ActivityResultLauncher<Intent> formActivityLauncher) {
+        this.musteriler = musteriler;
+        this.context = context;
+        this.formActivityLauncher = formActivityLauncher;
+    }
 
     public interface OnMusteriDeletedListener {
         void onMusteriDeleted();
-    }
-
-    public MusteriAdapter(List<Musteri> musteriler, Context context) {
-        this.musteriler = musteriler;
-        this.context = context;
     }
 
     public void setOnMusteriDeletedListener(OnMusteriDeletedListener listener) {
@@ -79,29 +87,51 @@ public class MusteriAdapter extends RecyclerView.Adapter<MusteriAdapter.MusteriV
             btnSil = itemView.findViewById(R.id.btnSil);
         }
 
+
         void bind(Musteri musteri) {
             tvAdSoyad.setText(musteri.getAd() + " " + musteri.getSoyad());
             tvEmail.setText(musteri.getEmail());
             tvTC.setText("TC: " + musteri.getTc());
-            tvDogumTarihi.setText("Doğum: " + musteri.getDg());
-            tvKayitTarihi.setText("Kayıt: " + musteri.getKt());
-            tvGuncellemeTarihi.setText("Güncelleme: " + musteri.getGt());
 
+            // Doğum tarihi API'de YYYY-aa-GG formatında, uygulamada GG-aa-YYYY olarak gözüksün istiyoruz.
+            try {
+                SimpleDateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                Date date = apiFormat.parse(musteri.getDg());
+                tvDogumTarihi.setText("Doğum: " + displayFormat.format(date));
+            } catch (ParseException e) {
+                Log.e("MusteriAdapter", "Doğum tarihi format dönüştürme hatası: " + e.getMessage());
+                tvDogumTarihi.setText("Doğum: " + musteri.getDg());
+            }
+
+            try {
+                SimpleDateFormat apiDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                SimpleDateFormat displayDateTimeFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
+
+                Date ktDate = apiDateTimeFormat.parse(musteri.getKt());
+                tvKayitTarihi.setText("Kayıt: " + displayDateTimeFormat.format(ktDate));
+
+                Date gtDate = apiDateTimeFormat.parse(musteri.getGt());
+                tvGuncellemeTarihi.setText("Güncelleme: " + displayDateTimeFormat.format(gtDate));
+
+            } catch (ParseException e) {
+                Log.e("MusteriAdapter", "Kayıt/Güncelleme tarihi format dönüştürme hatası: " + e.getMessage());
+                tvKayitTarihi.setText("Kayıt: " + musteri.getKt());
+                tvGuncellemeTarihi.setText("Güncelleme: " + musteri.getGt());
+            }
             // Cinsiyet bilgisini göster
             if (musteri.getCins()) {
                 tvCinsiyet.setText("Kadın");
-                // Kadın için farklı bir ikon kullanabilirsiniz
                 ivCinsiyetIcon.setImageResource(android.R.drawable.ic_menu_myplaces);
             } else {
                 tvCinsiyet.setText("Erkek");
-                // Erkek için farklı bir ikon kullanabilirsiniz
                 ivCinsiyetIcon.setImageResource(android.R.drawable.ic_menu_myplaces);
             }
 
             btnDuzenle.setOnClickListener(v -> {
                 Intent intent = new Intent(context, MusteriFormActivity.class);
                 intent.putExtra("musteri", musteri);
-                context.startActivity(intent);
+                formActivityLauncher.launch(intent);
             });
 
             btnSil.setOnClickListener(v -> showDeleteConfirmDialog(musteri, getAdapterPosition()));
@@ -109,6 +139,7 @@ public class MusteriAdapter extends RecyclerView.Adapter<MusteriAdapter.MusteriV
 
     }
 
+    // Silme işlemi için uyarı mesajı göster.
     private void showDeleteConfirmDialog(Musteri musteri, int position) {
         new AlertDialog.Builder(context)
                 .setTitle("Müşteri Sil")
@@ -119,6 +150,7 @@ public class MusteriAdapter extends RecyclerView.Adapter<MusteriAdapter.MusteriV
                 .show();
     }
 
+    // Müşteriyi silme işlemi.
     private void deleteMusteri(String musteriId, int position) {
         Call<Void> call = ApiClient.getApiService().musteriSil(musteriId);
         call.enqueue(new Callback<Void>() {
@@ -126,10 +158,8 @@ public class MusteriAdapter extends RecyclerView.Adapter<MusteriAdapter.MusteriV
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(context, "Müşteri silindi!", Toast.LENGTH_SHORT).show();
-                    // Pozisyonu kullanarak doğrudan kaldır
                     musteriler.remove(position);
                     notifyItemRemoved(position);
-                    // Eğer hala bir dış dinleyiciye ihtiyaç varsa çağır
                     if (deleteListener != null) {
                         deleteListener.onMusteriDeleted();
                     }

@@ -12,7 +12,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.musteriprogrami.R;
 import com.example.musteriprogrami.activities.MusteriFormActivity;
 import com.example.musteriprogrami.interfaces.MusteriAdapter;
 import com.example.musteriprogrami.controllers.ApiClient;
@@ -43,11 +42,12 @@ public class MainActivity extends AppCompatActivity implements MusteriAdapter.On
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        setupActivityLauncher();
+
         initViews();
         setupRecyclerView();
         setupClickListeners();
         setupSearch();
-        setupActivityLauncher();
 
         loadMusteriler();
     }
@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements MusteriAdapter.On
     }
 
     private void setupRecyclerView() {
-        musteriAdapter = new MusteriAdapter(filteredMusteriler, this);
+        musteriAdapter = new MusteriAdapter(filteredMusteriler, this, formActivityLauncher);
         musteriAdapter.setOnMusteriDeletedListener(this);
         recyclerViewMusteriler.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewMusteriler.setAdapter(musteriAdapter);
@@ -96,12 +96,13 @@ public class MainActivity extends AppCompatActivity implements MusteriAdapter.On
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == RESULT_OK) {
-                        loadMusteriler(); // Form'dan döndükten sonra listeyi yenile
+                        loadMusteriler();
                     }
                 }
         );
     }
 
+    // Müşteri kaydetme, güncelleme veya silme aktivitelerinden sonra ya da yenile butonuna tıklandığında listeyi yenile.
     private void loadMusteriler() {
         showLoading(true);
         Call<List<Musteri>> call = ApiClient.getApiService().tumMusteriler();
